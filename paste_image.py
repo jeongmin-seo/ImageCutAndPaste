@@ -8,13 +8,19 @@ import numpy as np
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--input_dir', metavar='PATH', type=str, default='./cut_image')
-parser.add_argument('--num_col', type=int, default=3)
-parser.add_argument('--num_row', type=int, default=3)
-parser.add_argument('--measure', type=str, default='edge')
+parser.add_argument('--num_col', type=int, default=2)
+parser.add_argument('--num_row', type=int, default=2)
+parser.add_argument('--measure', type=str, default='euclidean')
 parser.add_argument('--output_dir', metavar='PATH', type=str, default='./')
 
 
 def edge_similar(_img, _coordinate, _direction='row'):
+    """
+    :param _img: Input RGB image.
+    :param _coordinate: Coordinate related to the position at which to count the number of edge pixels.
+    :param _direction: The factor related of the direction of counting the number of edge pixels.
+    :return: Number of pixels that can be judged to be edges at the image boundary.
+    """
     n = 0
     _copied_img = copy.deepcopy(_img)
     _copied_img = cv2.cvtColor(_copied_img, cv2.COLOR_RGB2GRAY)
@@ -35,16 +41,30 @@ def edge_similar(_img, _coordinate, _direction='row'):
 
 
 def euclidean_distance(_vector1, _vector2):
+    """
+    :param _vector1:  Input vector
+    :param _vector2:  Input vector
+    :return:  Squared value of euclidean distance.
+    """
     assert _vector1.shape == _vector2.shape
     return np.sum((_vector1 - _vector2) ** 2)
 
 
 def cos_similarity(_vector1, _vector2):
+    """
+    :param _vector1:  Input vector
+    :param _vector2:  Input vector
+    :return:  Cosine similarity value.
+    """
     assert _vector1.shape == _vector2.shape
     return np.dot(_vector1, _vector2) / (np.linalg.norm(_vector1) * np.linalg.norm(_vector2))
 
 
 def load_cut_images(_dir_path):
+    """
+    :param _dir_path:  The directory path where the cropped images are stored.
+    :return:  All jpg format images in directory path.
+    """
     result = list()
     for file_name in os.listdir(_dir_path):
         split_name, ext = os.path.splitext(file_name)
@@ -55,6 +75,11 @@ def load_cut_images(_dir_path):
 
 
 def calc_measure(_factor, _measure='cosine'):
+    """
+    :param _factor:  Two vector lists to calculate.
+    :param _measure: Factor related to the method of calculating similarity.
+    :return: Calculated similarity.
+    """
     measure = 0
     if _measure == 'cosine':
         for i in range(_factor[0].shape[-1]):
@@ -74,6 +99,10 @@ def calc_measure(_factor, _measure='cosine'):
 
 
 def decode_image(_image):
+    """
+    :param _image: Input RGB or Gray image.
+    :return: Decoded (mirroring, flipping, rotate) image.
+    """
     for _idx in func_idx:
         decoded_image = copy.deepcopy(_image)
         for i in range(len(_idx) - 1, -1, -1):
@@ -81,7 +110,14 @@ def decode_image(_image):
         yield decoded_image
 
 
-def col_wise_paste(_base_image, _compare_images, _decode_func, _func_idx, _col, _sim_measure):
+def col_wise_paste(_base_image, _compare_images, _col, _sim_measure):
+    """
+    :param _base_image: An image that is the basis for pasting an image in the row direction.
+    :param _compare_images: Image list to compare with _base_image input by _base_image.
+    :param _col: Number of columns.
+    :param _sim_measure: A factor that determines which similarity calculation to take.
+    :return: An image that connected in the column direction according to the similarity. (Final Result)
+    """
     for _ in range(_col - 1):
         best_status = dict()
         for _compare_idx, _compare_image in enumerate(_compare_images):
@@ -131,7 +167,16 @@ def col_wise_paste(_base_image, _compare_images, _decode_func, _func_idx, _col, 
     return _base_image
 
 
-def row_wise_paste(_base_image, _compare_images, _decode_func, _func_idx, _row, _sim_measure):
+def row_wise_paste(_base_image, _compare_images, _row, _sim_measure):
+    """
+    :param _base_image: An image that is the basis for pasting an image in the row direction.
+    :param _compare_images: Image list to compare with _base_image input by _base_image.
+    :param _row: Number of rows.
+    :param _sim_measure: A factor that determines which similarity calculation to take.
+    :return: 1. An image that connected in the row direction according to the similarity.
+             2. Calculated maximum similarity.
+             3. Remaining compare images.
+    """
     best_measure = None
     for _ in range(_row - 1):
         best_status = dict()
@@ -192,6 +237,10 @@ def unrotate(_img):
 
 
 def index_combination(_index_list):
+    """
+    :param _index_list: input list.
+    :return: Returns all combinations of list elements.
+    """
     combs = list()
     for i in range(len(_index_list)+1):
         els = [list(x) for x in itertools.combinations(_index_list, i)]
@@ -211,21 +260,18 @@ if __name__ == "__main__":
     selected_measure = args.measure
     output_name = os.path.join(args.output_dir, 'reconstructed_image.jpg')
 
-    image_list = load_cut_images(input_dir)
     decode_list = [mirroring, flipping, unrotate]
     func_idx = index_combination(range(len(decode_list)))
 
+    image_list = load_cut_images(input_dir)
     base_image = image_list.pop(0)
-    cv2.imshow("", base_image)
-    cv2.waitKey(0)
     base_shape = copy.deepcopy(base_image.shape)
     row_iamges = list()
     for i in range(col):
         row_image = None
         if not i:
-            base_image, _, image_list = row_wise_paste(base_image, image_list, decode_list, func_idx, row, selected_measure)
+            base_image, _, image_list = row_wise_paste(base_image, image_list, row, selected_measure)
             row_image = base_image
-            cv2.imwrite("./second.jpg", base_image)
 
         else:
             best_similarity = None
@@ -241,7 +287,7 @@ if __name__ == "__main__":
                 copied_image_list = copy.deepcopy(image_list)
                 if base_tmp_image.shape == base_shape:
                     result_image, similarity, copied_image_list = \
-                        row_wise_paste(base_tmp_image, copied_image_list, decode_list, func_idx, row, selected_measure)
+                        row_wise_paste(base_tmp_image, copied_image_list, row, selected_measure)
 
                     if not best_similarity or best_similarity < similarity:
                         best_similarity = similarity
@@ -252,5 +298,5 @@ if __name__ == "__main__":
         row_iamges.append(row_image)
 
     base_image = row_iamges.pop(0)
-    return_image = col_wise_paste(base_image, row_iamges, decode_list, func_idx, col, selected_measure)
+    return_image = col_wise_paste(base_image, row_iamges, col, selected_measure)
     cv2.imwrite(output_name, return_image)

@@ -6,13 +6,17 @@ import shutil
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--image_name', metavar='PATH', type=str, default='./cut_img.jpg')
-parser.add_argument('--num_col', type=int, default=3)
-parser.add_argument('--num_row', type=int, default=3)
+parser.add_argument('--image_name', metavar='PATH', type=str, default='./cat_img.jpg')
+parser.add_argument('--num_col', type=int, default=2)
+parser.add_argument('--num_row', type=int, default=2)
 parser.add_argument('--output_dir', metavar='PATH', type=str, default='./')
 
 
 def encode_image(_img):
+    """
+    :param _img: input RGB image
+    :return: encoded (mirroring, flipping, rotate) RGB image
+    """
     enc_names = ['mirroring', 'flipping', 'rotation']
     for enc_name in enc_names:
         if random.randint(0, 1):
@@ -27,6 +31,12 @@ def encode_image(_img):
 
 
 def cut_image(_img, _row, _col):
+    """
+    :param _img: input RGB images
+    :param _row: Number of rows in grid
+    :param _col: Number of column in grid
+    :return: Cropped images
+    """
     _cut_imgs = list()
     (height, width, _) = _img.shape
     cut_height = height//_row
@@ -40,6 +50,10 @@ def cut_image(_img, _row, _col):
 
 
 def generate_name(_length=8):
+    """
+    :param _length: Length of name to create
+    :return: Generated name
+    """
     result = ""
     for _ in range(_length):
         result += random.choice(string.ascii_lowercase + string.digits)
