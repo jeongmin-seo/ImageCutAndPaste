@@ -266,6 +266,13 @@ if __name__ == "__main__":
     image_list = load_cut_images(input_dir)
     base_image = image_list.pop(0)
     base_shape = copy.deepcopy(base_image.shape)
+
+    if (base_shape[0] < base_shape[1] and col > row) or \
+            (base_shape[0] > base_shape[1] and col < row):
+        tmp = copy.deepcopy(row)
+        row = copy.deepcopy(col)
+        col = tmp
+
     row_iamges = list()
     for i in range(col):
         row_image = None
