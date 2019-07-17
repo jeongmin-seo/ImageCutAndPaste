@@ -6,7 +6,7 @@ import shutil
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--image_name', metavar='PATH', type=str, default='./cat_img.jpg')
+parser.add_argument('--image_name', metavar='PATH', type=str, default='./img/cat_img.jpg')
 parser.add_argument('--num_col', type=int, default=2)
 parser.add_argument('--num_row', type=int, default=2)
 parser.add_argument('--output_dir', metavar='PATH', type=str, default='./')
@@ -18,6 +18,9 @@ def encode_image(_img):
     :return: encoded (mirroring, flipping, rotate) RGB image
     """
     enc_names = ['mirroring', 'flipping', 'rotation']
+    # enc_names = ['mirroring']
+    # enc_names = ['flipping']
+    # enc_names = ['rotation']
     for enc_name in enc_names:
         if random.randint(0, 1):
             if enc_name == 'mirroring':
